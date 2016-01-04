@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block body %}
+  <!-- Page Heading -->
+  <div class="row">
+      <div class="col-lg-12">
+          <h1 class="page-header">
+              Devices
+          </h1>
+          <ol class="breadcrumb">
+              <li>
+                  <i class="fa fa-dashboard"></i>  <a href="{{ url_for('homepage')}}">Start</a>
+              </li>
+              <li class="active">
+                  <i class="fa fa-fw fa-table"></i> Devices
+              </li>
+          </ol>
+      </div>
+  </div>
+  <!-- /.row -->
+
+  <div class="jumbotron">
+    <ul class="devices">
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Pin</th>
+                </tr>
+            </thead>
+            <tbody>
+              {% for device in devices %}
+                <tr>
+                    <td>{{ device[0] }}</td>
+                    <td>{{ device[1] }}</td>
+                    <td>{{ device[2] }}</td>
+                    <td>{{ device[3] }}</td>
+                    <td>{{ device[4] }}</td>
+                    <td>{{ device[5] }}</td>
+                    <td><a href="{{ url_for('editdev', dev=device[0]) }}" title="edit"><i class="fa fa-fw fa-gear"></i></a>
+                      <a href="{{ url_for('deletedev', dev=device[0]) }}" title="delete"><i class="fa fa-fw fa-trash"></i></a></td>
+                </tr>
+              {% else %}
+                <li><em>Unbelievable.  No devices so far</em>
+              {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    </ul>
+  </div>
+{% endblock %}
