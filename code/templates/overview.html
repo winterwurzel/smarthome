@@ -1,5 +1,8 @@
 {% extends "layout.html" %}
 {% block body %}
+  <link href="{{ url_for('static', filename='css/bootstrap-switch.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/bootstrap-switch.js') }}"></script>
+
   <!-- Page Heading -->
   <div class="row">
       <div class="col-lg-12">
@@ -17,7 +20,66 @@
 
   <div class="jumbotron">
     <ul class="devices">
-      {{ message }}
+      <div class="table-responsive">
+          <table class="table table-hover">
+              <thead>
+                  <tr>
+                      <th>Name</th>
+                      <th>Description</th>
+                      <th>Pin</th>
+                      <th>Current value</th>
+                  </tr>
+              </thead>
+              <tbody>
+                {% for value in values %}
+                    <tr>
+                        <td>{{ value[1] }}</td>
+                        <td>{{ value[2] }}</td>
+                        <td>{{ value[4] }}</td>
+                        <td>{{ value[7] }}</td>
+                    </tr>
+                {% else %}
+                {% endfor %}
+              </tbody>
+          </table>
+        </div>
     </ul>
   </div>
+  <form action="{{ url_for('homepage') }}" method="post" role="form">
+    {% for dev in outputDevices %}
+    <div class="form-group">
+      <label for="toggle{{ dev[0] }}">{{ dev[1] }}</label>
+      <input type="checkbox" name="toggle{{ dev[0] }}" id="toggle{{ dev[0] }}">
+    </div>
+    <script type="text/javascript">
+      togg{{ dev[0] }} = 0;
+      var xhttp;
+      if (window.XMLHttpRequest) {
+          xhttp = new XMLHttpRequest();
+          } else {
+          // code for IE6, IE5
+          xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+      }
+
+      $(function() {
+        $("[name='toggle{{ dev[0] }}']").bootstrapSwitch();
+        if ({{ dev[5] }} == 0)
+          $('input[name="toggle{{ dev[0] }}"]').bootstrapSwitch('state', false);
+        else
+          $('input[name="toggle{{ dev[0] }}"]').bootstrapSwitch('state', true);
+      });
+
+      $('#toggle{{ dev[0] }}').on('switchChange.bootstrapSwitch', function (event, state) {
+        if (togg{{ dev[0] }} == 0 && {{ dev[5] }} == state)
+          togg{{ dev[0] }}=togg{{ dev[0] }}+1;
+        else {
+          xhttp.open("POST", "{{ url_for('homepage') }}", true);
+          xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+          xhttp.send("device={{ dev[0] }}&state=" + state);
+        }
+      });
+    </script>
+    {% else %}
+    {% endfor %}
+  </form>
 {% endblock %}

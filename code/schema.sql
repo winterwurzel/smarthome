@@ -6,8 +6,9 @@ create table devices (
   description text,           --device description, otpional
   type text not null,         --device type: input or output
   pin int,                    --pin the device uses
-  state int                  --only for output devices 0 = false, 1 = true
+  state int,                  --only for output devices 0 = false, 1 = true, null for other devices
+  module text                 --path to module of this device
 );
 
-insert into devices values (1, "Temp Sensor 3000", "best sensor in the universe", "input", 18);
-insert into devices values (2, "motor", "best actor in the universe", "output", 16, 0);
+insert into devices values (1, "Temp Sensor 3000", "best sensor in the universe", "input", 18, null, "modules/gpio_input.py");
+insert into devices values (2, "motor", "best actor in the universe", "input", 16, null, "modules/gpio_input.py");

@@ -38,12 +38,18 @@
           <option>output</option>
         </select>
       </div>
+      <label for="mod">Choose module to use:</label>
+      <select class="form-control" id="mod" name="mod">
+        {% for module in modules %}
+          <option>{{ module }}</option>
+        {% else %}
+        {% endfor %}
+      </select>
       <div class="form-group">
         <label for="pin">Pin:</label>
         <input type="number" class="form-control" name="pin" id="pin">
       </div>
       <button type="submit" class="btn btn-default" value="Share">Submit</button>
     </form>
-  </div>
   </div>
 {% endblock %}
