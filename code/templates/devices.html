@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% set active_page = "devices" %}
 {% block body %}
   <!-- Page Heading -->
   <div class="row">
@@ -18,6 +19,7 @@
   </div>
   <!-- /.row -->
 
+  {% include "security/_messages.html" %}
   <div class="table-responsive">
       <table class="table table-striped">
           <thead>

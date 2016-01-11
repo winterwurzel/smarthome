@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+{% set active_page = "users" %}
+{% block body %}
+  <!-- Page Heading -->
+  <div class="row">
+      <div class="col-lg-12">
+          <h1 class="page-header">
+              Users
+          </h1>
+          <ol class="breadcrumb">
+              <li>
+                  <i class="fa fa-dashboard"></i>  <a href="{{ url_for('homepage')}}">Start</a>
+              </li>
+              <li class="active">
+                  <i class="fa fa-user"></i> Users
+              </li>
+          </ol>
+      </div>
+  </div>
+  <!-- /.row -->
+
+  {% include "security/_messages.html" %}
+  <div class="table-responsive">
+      <table class="table table-striped">
+          <thead>
+              <tr>
+                  <th>email</th>
+                  <th>roles</th>
+              </tr>
+          </thead>
+          <tbody>
+            {% for user in userlist %}
+              <tr>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    {% for role in user.roles %}
+                    {{ role.name }},
+                    {% else %}
+                    -
+                    {% endfor %}
+                  </td>
+                  <td><a href="{{ url_for('userinfo', user_id=user.id) }}" title="edit"><i class="fa fa-fw fa-gear"></i></a>
+                    <a href="{{ url_for('deleteuser', user_id=user.id) }}" title="delete"><i class="fa fa-fw fa-trash"></i></a></td>
+              </tr>
+            {% else %}
+              <li><em>Unbelievable.  No users so far</em>
+            {% endfor %}
+          </tbody>
+      </table>
+  </div>
+{% endblock %}

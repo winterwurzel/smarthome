@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+{% set active_page = "users" %}
+{% block body %}
+  <!-- Page Heading -->
+  <div class="row">
+      <div class="col-lg-12">
+          <h1 class="page-header">
+              Userinfo
+          </h1>
+          <ol class="breadcrumb">
+              <li>
+                  <i class="fa fa-dashboard"></i>  <a href="{{ url_for('homepage')}}">Start</a>
+              </li>
+              <li>
+                  <i class="fa fa-user"></i> <a href="{{ url_for('users')}}">Users</a>
+              </li>
+              <li class="active">
+                  <i class="fa fa-user"></i> Userinfo
+              </li>
+          </ol>
+      </div>
+  </div>
+  <!-- /.row -->
+
+  {% include "security/_messages.html" %}
+  <div class="panel panel-default">
+      <div class="panel-heading">
+          <h3 class="panel-title">General Info</h3>
+      </div>
+      <div class="panel-body">
+          <table class="table table-striped">
+            <tbody>
+              <tr>
+                <th>User ID</th>
+                <td>{{ user.id }}</td>
+              </tr>
+              <tr>
+                <th>Email Address</th>
+                <td>{{ user.email }}</td>
+              </tr>
+              <tr>
+                <th>Roles</th>
+                <td>
+                  {% for role in user.roles %}
+                  {{ role.name }},
+                  {% else %}
+                  -
+                  {% endfor %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+      </div>
+  </div>
+  <div class="panel panel-default">
+      <div class="panel-heading">
+          <h3 class="panel-title">Roles</h3>
+      </div>
+
+      <div class="panel-body">
+        <form action="{{ url_for('changeroles') }}" method="post" role="form">
+          <table class="table table-striped">
+            <thead>
+              <th>Role</th>
+              <th>Granted</th>
+            </thead>
+            <tbody>
+              {% for role in roles %}
+              <tr>
+                <td>{{ role.name }}</td>
+                <td><input id="role{{ role.id }}" name="role{{ role.id }}" type="checkbox" value="{{ role.id }}" {% if role.name == "admin" %} disabled{% endif %}
+                  {% if role in user.roles %} checked{% endif %}></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <input type="number" class="hidden" name="user_id" id="user_id" value="{{ user.id }}" >
+          <button type="submit" class="btn btn-default" value="save">Save changes</button>
+        </form>
+      </div>
+  </div>
+  <div class="panel panel-default">
+      <div class="panel-heading">
+          <h3 class="panel-title">Additional Info</h3>
+      </div>
+      <div class="panel-body">
+          <table class="table table-striped">
+            <tbody>
+              <tr>
+                <th>Last Login at</th>
+                <td>{{ user.last_login_at }}</td>
+              </tr>
+              <tr>
+                <th>Current Login at</th>
+                <td>{{ user.current_login_at }}</td>
+              </tr>
+              <tr>
+                <th>Last Login IP-Adress</th>
+                <td>{{ user.last_login_ip }}</td>
+              </tr>
+              <tr>
+                <th>Current Login IP-Adress</th>
+                <td>{{ user.current_login_ip }}</td>
+              </tr>
+              <tr>
+                <th>Login Count</th>
+                <td>{{ user.login_count }}</td>
+              </tr>
+            </tbody>
+          </table>
+      </div>
+  </div>
+{% endblock %}

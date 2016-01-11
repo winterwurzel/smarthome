@@ -1,14 +1,15 @@
 # all the imports
 import glob, importlib, atexit
 from werkzeug import generate_password_hash, check_password_hash
-from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, current_app
+from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, current_app, jsonify
 from flask.ext.script import Manager
 import flask.ext.login as flask_login
-from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required
+from flask.ext.security import Security, SQLAlchemyUserDatastore, UserMixin, RoleMixin, login_required, roles_accepted
 from flask.ext.security.utils import encrypt_password
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.exc import UnmappedInstanceError
 from flask_mail import Mail
+from pprint import pprint
 import RPi.GPIO as GPIO
 
 # configuration
@@ -21,6 +22,7 @@ SECURITY_DEFAULT_REMEMBER_ME = True
 SECURITY_CHANGEABLE = True
 SECURITY_REGISTERABLE = True
 SECURITY_CHANGE_URL = '/change'
+SECURITY_TRACKABLE = True
 
 # create our little application :)
 app = Flask(__name__)
@@ -34,6 +36,7 @@ mail = Mail(app)
 
 imports = {}
 devicelist = {}
+input_values = {}
 
 # Define models
 roles_users = db.Table('roles_users',
@@ -54,6 +57,11 @@ class User(db.Model, UserMixin):
     confirmed_at = db.Column(db.DateTime())
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
     authenticated = db.Column(db.Boolean, default=False)
+    last_login_at = db.Column(db.DateTime())
+    current_login_at = db.Column(db.DateTime())
+    last_login_ip = db.Column(db.String(63))
+    current_login_ip = db.Column(db.String(63))
+    login_count = db.Column(db.Integer())
 
 
 class Device(db.Model):
@@ -91,8 +99,10 @@ def init_db():
         db.create_all()
         #default values for the db
         user = user_datastore.create_user(email='georg.markowitsch@gmail.com', password=encrypt_password('admin'))
-        role = user_datastore.create_role(name='admin', description='admin can add/remove other users, no access restrictions')
-        user_datastore.add_role_to_user(user, role)
+        adminRole = user_datastore.create_role(name='admin', description='admin can add/remove other users, no access restrictions')
+        userRole = user_datastore.create_role(name='user', description='basic access')
+        user_datastore.add_role_to_user(user, adminRole)
+        user_datastore.add_role_to_user(user, userRole)
         db.session.add(Device('Temp Sensor 3000', 'best sensor in the universe', 'input', 18, None, 'modules/gpio_input.py'))
         db.session.add(Device('motor', 'best actor in the universe', 'input', 16, None, 'modules/gpio_input.py'))
         db.session.add(Device('led', 'bright led', 'output', 11, 0, 'modules/gpio_output.py'))
@@ -101,6 +111,11 @@ def init_db():
         db.session.add(Device('led47', 'onboard', 'output', 47, 0, 'modules/gpio_output.py'))
         db.session.commit()
 
+def gpio_callback(pin, value):
+    input_values[pin] = value
+    print "pin " + str(pin) + " value " + str(value)
+
+
 def init_devices():
     atexit.register(exit_handler)
     try:
@@ -108,7 +123,11 @@ def init_devices():
         for device in devices:
             to_import = device.module[:-3]
             imports[device.id] = importlib.import_module(to_import.replace("/", "."))
-            devicelist[device.id] = imports[device.id].gpio(device.pin)
+            if device.dtype == "input":
+                devicelist[device.id] = imports[device.id].gpio(device.pin, gpio_callback)
+                input_values[device.pin] = devicelist[device.id].get_value()
+            else:
+                devicelist[device.id] = imports[device.id].gpio(device.pin)
             if device.dtype == "output":
                 devicelist[device.id].write_value(device.state)
     except Exception, e:
@@ -138,20 +157,82 @@ def homepage():
         inputDevices = Device.query.filter_by(dtype='input').all()
         values = []
 
+        auth = False
+        if flask_login.current_user.has_role('user') or flask_login.current_user.has_role('admin'):
+            auth = True
+
         for dev in inputDevices:
-            values.append((dev.id, dev.name, dev.description, dev.dtype, dev.pin, dev.state, dev.module, devicelist[dev.id].get_value()))
-        return render_template('overview.html', outputDevices=outputDevices, values=values, auth=True if hasattr(flask_login.current_user, 'authenticated') else False)
+            values.append((dev.id, dev.name, dev.description, dev.dtype, dev.pin, dev.state, dev.module, input_values[dev.pin]))#devicelist[dev.id].get_value()))
+        return render_template('overview.html', outputDevices=outputDevices, values=values, auth=auth if hasattr(flask_login.current_user, 'authenticated') else False)
     except Exception, e:
         return "exception " + str(e)
 
+@app.route('/refresh', methods= ['GET'])
+def refresh():
+    return jsonify(values=input_values)
+
+@app.route('/users')
+@login_required
+@roles_accepted('admin')
+def users():
+    userlist = User.query.outerjoin(roles_users, User.id == roles_users.c.user_id).outerjoin(Role, Role.id == roles_users.c.role_id).all()
+    return render_template("users.html", userlist=userlist)
+
+@app.route('/deleteuser')
+@login_required
+@roles_accepted('admin')
+def deleteuser():
+    user_id = request.args.get("user_id")
+    userToDel = User.query.outerjoin(roles_users, User.id == roles_users.c.user_id).outerjoin(Role, Role.id == roles_users.c.role_id).filter(User.id == user_id).first()
+    for role in userToDel.roles:
+        if role.name == 'admin':
+            flash('admin user can not be deleted')
+            return redirect(url_for('users'))
+    db.session.delete(userToDel)
+    db.session.commit()
+    return redirect(url_for('users'))
+
+@app.route('/userinfo')
+@login_required
+@roles_accepted('admin')
+def userinfo():
+    user_id = request.args.get("user_id")
+    user = User.query.outerjoin(roles_users, User.id == roles_users.c.user_id).outerjoin(Role, Role.id == roles_users.c.role_id).filter(User.id == user_id).first()
+    roles = Role.query.all()
+    return render_template("userinfo.html", user=user, roles=roles)
+
+@app.route('/changeroles', methods=['POST'])
+@login_required
+@roles_accepted('admin')
+def changeroles():
+    user_id = request.form["user_id"]
+    #print user_id
+    roles = Role.query.all()
+    del roles[0]
+    for role in roles:
+        role_id = request.form.getlist("role" + str(role.id))
+        #print role_id
+        user = User.query.get(user_id)
+        if len(role_id) > 0:
+            user_datastore.add_role_to_user(user, role)
+            db.session.commit()
+            flash('Added Role "' + role.name + '" to User "' + user.email + '"')
+        else:
+            user_datastore.remove_role_from_user(user, role)
+            db.session.commit()
+            flash('Removed Role "' + role.name + '" from User "' + user.email + '"')
+    return redirect(url_for('users'))
+
 @app.route('/devices')
 @login_required
+@roles_accepted('user', 'admin')
 def devices():
     devices = Device.query.all()
     return render_template("devices.html", devices=devices)
 
 @app.route('/adddev')
 @login_required
+@roles_accepted('user', 'admin')
 def adddev():
     modules = glob.glob("modules/*.py")
     modules.remove("modules/__init__.py")
@@ -159,6 +240,7 @@ def adddev():
 
 @app.route('/editdev')
 @login_required
+@roles_accepted('user', 'admin')
 def editdev():
     devId = request.args.get("dev")
     device = Device.query.get(devId)
@@ -166,6 +248,7 @@ def editdev():
 
 @app.route('/deletedev')
 @login_required
+@roles_accepted('user', 'admin')
 def deletedev():
     devId = request.args.get("dev")
     devToDel = Device.query.get(devId)
@@ -175,6 +258,7 @@ def deletedev():
 
 @app.route('/edit', methods=['POST'])
 @login_required
+@roles_accepted('user', 'admin')
 def edit_device():
     devId = request.form['id']
     device = Device.query.get(devId)
@@ -185,6 +269,7 @@ def edit_device():
 
 @app.route('/add', methods=['POST'])
 @login_required
+@roles_accepted('user', 'admin')
 def add_device():
     if request.form['type'] == "output":
         newDev = Device(request.form['name'], request.form['description'], request.form['type'], request.form['pin'], 0, request.form['mod'])
@@ -200,6 +285,7 @@ def add_device():
 
 @app.route('/settings', methods=['POST', 'GET'])
 @login_required
+@roles_accepted('user', 'admin')
 def settings():
     if request.method == 'POST':
         if request.form['submit'] == 'settings':
