@@ -103,12 +103,11 @@ def init_db():
         userRole = user_datastore.create_role(name='user', description='basic access')
         user_datastore.add_role_to_user(user, adminRole)
         user_datastore.add_role_to_user(user, userRole)
-        db.session.add(Device('Temp Sensor 3000', 'best sensor in the universe', 'input', 18, None, 'modules/gpio_input.py'))
-        db.session.add(Device('motor', 'best actor in the universe', 'input', 16, None, 'modules/gpio_input.py'))
+        db.session.add(Device('Dummy Sensor 1', 'best sensor in the universe', 'input', 18, None, 'modules/gpio_input.py'))
+        db.session.add(Device('Dummy Sensor 2', 'best description in the universe', 'input', 16, None, 'modules/gpio_input.py'))
         db.session.add(Device('led', 'bright led', 'output', 11, 0, 'modules/gpio_output.py'))
         db.session.add(Device('led3', 'a zweite led', 'output', 12, 0, 'modules/gpio_output.py'))
         db.session.add(Device('led35', 'onboard', 'output', 35, 0, 'modules/gpio_output.py'))
-        db.session.add(Device('led47', 'onboard', 'output', 47, 0, 'modules/gpio_output.py'))
         db.session.commit()
 
 def gpio_callback(pin, value):
