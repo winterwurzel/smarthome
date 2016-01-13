@@ -23,6 +23,12 @@ SECURITY_CHANGEABLE = True
 SECURITY_REGISTERABLE = True
 SECURITY_CHANGE_URL = '/change'
 SECURITY_TRACKABLE = True
+SECURITY_EMAIL_SENDER = 'smarthrpi@gmail.com'
+MAIL_SERVER = 'smtp.gmail.com'
+MAIL_PORT = 465
+MAIL_USE_SSL = True
+MAIL_USERNAME = 'smarthrpi@gmail.com'
+MAIL_PASSWORD = 'shrpi123'
 
 # create our little application :)
 app = Flask(__name__)
