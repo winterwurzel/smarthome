@@ -36,7 +36,10 @@
       <label for="type">Type:</label>
       <select class="form-control" id="type" name="type">
         <option>input</option>
+        <option>i2c</option>
         <option>output</option>
+        <option>serial</option>
+        <option>spi</option>
       </select>
     </div>
     <label for="mod">Choose module to use:</label>
@@ -49,6 +52,14 @@
     <div class="form-group">
       <label for="pin">Pin:</label>
       <input type="number" class="form-control" name="pin" id="pin">
+    </div>
+    <div class="form-group">
+      <label for="pin">Additional Data 1:</label>
+      <input type="text" class="form-control" name="other1" id="other1">
+    </div>
+    <div class="form-group">
+      <label for="pin">Additional Data 2:</label>
+      <input type="text" class="form-control" name="other2" id="other2">
     </div>
     <button type="submit" class="btn btn-default" value="Share">Submit</button>
   </form>

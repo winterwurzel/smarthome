@@ -40,12 +40,23 @@
       <label for="type">Type:</label>
       <select class="form-control" id="type" name="type" disabled>
         <option>input</option>
+        <option>i2c</option>
         <option>output</option>
+        <option>serial</option>
+        <option>spi</option>
       </select>
     </div>
     <div class="form-group">
       <label for="pin">Pin:</label>
       <input type="number" class="form-control" name="pin" id="pin" value="{{ dev.pin }}" readonly="readonly">
+    </div>
+    <div class="form-group">
+      <label for="pin">Additional Data 1:</label>
+      <input type="text" class="form-control" name="other1" id="other1" value="{{ dev.other1 }}" >
+    </div>
+    <div class="form-group">
+      <label for="pin">Additional Data 2:</label>
+      <input type="text" class="form-control" name="other2" id="other2" value="{{ dev.other2 }}" >
     </div>
     <button type="submit" class="btn btn-default" value="Edit">Submit</button>
   </form>

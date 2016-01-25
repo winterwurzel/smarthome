@@ -3,7 +3,7 @@
 
 import RPi.GPIO as GPIO
 
-class gpio:
+class dev:
     def __init__(self, pin):
         self.pin = pin
         GPIO.setmode(GPIO.BCM)

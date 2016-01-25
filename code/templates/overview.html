@@ -39,7 +39,7 @@
                   {% for value in values %}
                       <tr>
                           <td>{{ value[1] }}</td>
-                          <td id="value{{ value[4] }}">{{ value[7] }}</td>
+                          <td id="value{{ value[0] }}">{{ value[7] }}</td>
                           <td>{{ value[4] }}</td>
                           <td>{{ value[2] }}</td>
                       </tr>
@@ -57,6 +57,13 @@
             $.getJSON($SCRIPT_ROOT+"/refresh", function(data) {
                     for (var key in data.values) {
                       $("#value" + key).text(data.values[key].toString());
+                      //translate python true/false to js
+                      if (data.values[key] == 0)
+                        devState = false;
+                      else
+                        devState = true;
+                      //set state to state from database
+                      $('input[name="toggle' + key +'"]').bootstrapSwitch('state', devState, true);
                     }
             });
           }, 5000);
@@ -92,7 +99,7 @@
                       <td>{{ dev.description }}</td>
                     </tr>
                     <script type="text/javascript">
-                      togg{{ dev.id }} = 0;
+                      remote = false;
                       var xhttp;
 
                       if (window.XMLHttpRequest) {
@@ -103,32 +110,37 @@
                       }
 
                       $(function() {
+                        //register checkbox as bootstrapSwitch
                         $("[name='toggle{{ dev.id }}']").bootstrapSwitch();
+
+                        //translate python true/false to js
                         if ("{{ dev.state }}" == "True")
                           devState = true;
                         else
                           devState = false;
-                        $('input[name="toggle{{ dev.id }}"]').bootstrapSwitch('state', devState);
+                        //set state to state from database
+                        $('input[name="toggle{{ dev.id }}"]').bootstrapSwitch('state', devState, true);
+
+                        //translate python true/false to js
                         if ("{{ auth }}" == "False")
                           auth = true;
                         else
                           auth = false;
+                        //disable bootstrapSwitch if not authenticated
                         $("[name='toggle{{ dev.id }}']").bootstrapSwitch('disabled', auth);
                       });
 
                       $('#toggle{{ dev.id }}').on('switchChange.bootstrapSwitch', function (event, state) {
+                        //translate python true/false to js
                         if ("{{ dev.state }}" == "True")
                           devState = true;
                         else
                           devState = false;
-                        if (togg{{ dev.id }} == 0 && devState == state)
-                          ;
-                        else {
-                          xhttp.open("POST", "{{ url_for('homepage') }}", true);
-                          xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                          xhttp.send("device={{ dev.id }}&state=" + state);
-                        }
-                        togg{{ dev.id }} = togg{{ dev.id }}+1;
+
+                        //send state change to flask server
+                        xhttp.open("POST", "{{ url_for('homepage') }}", true);
+                        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                        xhttp.send("device={{ dev.id }}&state=" + state);
                       });
                     </script>
                   {% else %}
@@ -137,5 +149,37 @@
               </table>
             </div>
           </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">I2C</h3>
+            </div>
+            <div class="panel-body">
+              <div class="table-responsive">
+                  <table class="table table-striped">
+                      <thead>
+                          <tr>
+                              <th>Name</th>
+                              <th>Measured value</th>
+                              <th>Address</th>
+                              <th>Description</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                        {% for value in i2cValues %}
+                            <tr>
+                                <td>{{ value[1] }}</td>
+                                <td id="value{{ value[0] }}">{{ value[7] }}</td>
+                                <td>{{ value[4] }}</td>
+                                <td>{{ value[2] }}</td>
+                            </tr>
+                        {% else %}
+                        Nothing here yet
+                        {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+            </div>
         </div>
 {% endblock %}
