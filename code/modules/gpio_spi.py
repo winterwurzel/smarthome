@@ -28,3 +28,8 @@ class dev:
         return self.spi.xfer2(valuelist)
     def gpio_exit(self):
         self.spi.close()
+
+def get_form():
+    return "module-templates/gpio_spi.html"
+def get_dtype():
+    return "spi"

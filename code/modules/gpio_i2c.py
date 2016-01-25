@@ -24,7 +24,13 @@ class dev:
         print "writing " + str(value) + " to i2c " + str(self.address)
         return writeNumber(self.address, int(value), self.bus)
     def get_value(self):
-        print "reading i2c " + str(self.address)
-        return readNumber(self.address, self.bus)
+        result = readNumber(self.address, self.bus)
+        print "reading i2c " + str(self.address) + ", result: " + str(result)
+        return result
     def gpio_exit(self):
         pass
+
+def get_form():
+    return "module-templates/gpio_i2c.html"
+def get_dtype():
+    return "i2c"

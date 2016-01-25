@@ -1,0 +1,35 @@
+{% if dev is defined %}
+{% extends "editdev.html" %}
+{% else %}
+{% extends "adddev.html" %}
+{% endif %}
+{% block content %}
+{% if dev is defined %}
+<div class="form-group">
+  <label for="id">Id:</label>
+  <input type="number" class="form-control" name="id" id="id" value="{{ dev.id }}" readonly="readonly">
+</div>
+{% endif %}
+<div class="form-group">
+  <label for="name">Name:</label>
+  <input type="text" class="form-control" name="name" id="name" value="{{ dev.name if dev is defined }}">
+</div>
+<div class="form-group">
+  <label for="description">Description:</label>
+  <input type="text" class="form-control" name="description" id="description" value="{{ dev.description if dev is defined }}">
+</div>
+<div class="form-group">
+  <label for="mod">Choose module to use:</label>
+  <select class="form-control" id="mod" name="mod" {% if dev is defined %}readonly="readonly"{% endif %}>
+      <option>{{ dev.module if dev is defined else module }}</option>
+  </select>
+</div>
+<div class="form-group">
+  <label for="pin">I2C Address of connected device:</label>
+  <input type="number" class="form-control" name="other1" id="other1" {% if dev is defined %}value="{{ dev.other1 }}" readonly="readonly"{% endif %}>
+</div>
+<div class="form-group">
+  <label for="pin">Command to Send:</label>
+  <input type="text" class="form-control" name="other2" id="other2" {% if dev is defined %}value="{{ dev.other2 }}"{% endif %}>
+</div>
+{% endblock content %}

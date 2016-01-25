@@ -43,6 +43,10 @@ class dev:
     def gpio_exit(self):
         self.device.switchExit()
 
+def get_form():
+    return "module-templates/gpio_funk.html"
+def get_dtype():
+    return "output"
 
 
 class RemoteSwitch(object):

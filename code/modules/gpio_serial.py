@@ -21,3 +21,8 @@ class dev:
         return self.ser.readline()
     def gpio_exit(self):
         pass
+
+def get_form():
+    return "module-templates/gpio_serial.html"
+def get_dtype():
+    return "serial"

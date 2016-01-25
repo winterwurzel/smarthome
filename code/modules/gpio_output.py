@@ -13,3 +13,8 @@ class dev:
         return GPIO.output(self.pin, value)
     def gpio_exit(self):
         GPIO.cleanup(self.pin)
+
+def get_form():
+    return "module-templates/gpio.html"
+def get_dtype():
+    return "output"

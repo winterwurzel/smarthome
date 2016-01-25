@@ -117,8 +117,9 @@ def init_db():
         db.session.add(Device('Dummy Sensor 2', 'best description in the universe', 24, 'input', 'modules/gpio_input.py'))
         db.session.add(Device('led', 'onboard', 35, 'output', 'modules/gpio_output.py', 0))
         db.session.add(Device('funksetckdose', 'funksetckdose A', 4, 'output', 'modules/gpio_funk.py', 1, '11111', 1))
-        db.session.add(Device('arduino', 'arduino leonardo onboard temperature', 4, 'i2c', 'modules/gpio_i2c.py', None, 1))
-        db.session.add(Device('serial', 'serial demo', 0, 'serial', 'modules/gpio_serial.py', None, '/dev/ttyAMA0;9600'))
+        db.session.add(Device('arduino', 'arduino leonardo onboard temperature', None, 'i2c', 'modules/gpio_i2c.py', None, 4, 1))
+        db.session.add(Device('serial', 'serial demo', None, 'serial', 'modules/gpio_serial.py', None, '/dev/ttyAMA0', 9600))
+        db.session.add(Device('spi', 'spi demo', None, 'spi', 'modules/gpio_spi.py', None, 0, 0))
         db.session.commit()
 
 def gpio_callback(pin, value):
@@ -131,40 +132,45 @@ def init_devices():
     try:
         devices = Device.query.all()
         for device in devices:
-            to_import = device.module[:-3]
-            print "importing: " + device.module
-            imports[device.id] = importlib.import_module(to_import.replace("/", "."))
+            if device.id in imports:
+                print "already imported device id: " + str(device.id)
+            else:
+                to_import = device.module[:-3]
+                print "importing: " + device.module
+                imports[device.id] = importlib.import_module(to_import.replace("/", "."))
 
-            #module dependend initialization
-            if device.module == "modules/gpio_input.py":
-                devicelist[device.id] = imports[device.id].dev(device.pin, gpio_callback)
-                dev_values[device.id] = devicelist[device.id].get_value()
-            elif device.module == "modules/gpio_funk.py":
-                devicelist[device.id] = imports[device.id].dev(device.pin, list(device.other1), int(device.other2))
-                devicelist[device.id].write_value(device.state)
-                dev_values[device.id] = device.state
-            elif device.module == "modules/gpio_input.py":
-                devicelist[device.id] = imports[device.id].dev(device.pin)
-                devicelist[device.id].write_value(device.state)
-                dev_values[device.id] = device.state
-            elif device.module == "modules/gpio_i2c.py":
-                devicelist[device.id] = imports[device.id].dev(device.pin)
-                devicelist[device.id].write_value(device.other1)
-                dev_values[device.id] = devicelist[device.id].get_value()
-            elif device.module == "modules/gpio_serial.py":
-                split = device.other1.split(';')
-                port = split[0]
-                baudrate = int(split[1])
-                devicelist[device.id] = imports[device.id].dev(port, baudrate)
-                #devicelist[device.id].write_value(device.other1)
-                #dev_values[device.id] = devicelist[device.id].get_value()
-            elif device.module == "modules/gpio_spi.py":
-                split = device.other1.split(';')
-                bus = split[0]
-                sdevice = int(split[1])
-                devicelist[device.id] = imports[device.id].dev(bus, sdevice)
-                #devicelist[device.id].write_value(device.other1)
-                #dev_values[device.id] = devicelist[device.id].get_value()
+                #module dependend initialization
+                if device.module == "modules/gpio_input.py":
+                    devicelist[device.id] = imports[device.id].dev(device.pin, gpio_callback)
+                    dev_values[device.id] = devicelist[device.id].get_value()
+                elif device.module == "modules/gpio_funk.py":
+                    devicelist[device.id] = imports[device.id].dev(device.pin, list(device.other1), int(device.other2))
+                    devicelist[device.id].write_value(device.state)
+                    dev_values[device.id] = device.state
+                elif device.module == "modules/gpio_input.py":
+                    devicelist[device.id] = imports[device.id].dev(device.pin)
+                    devicelist[device.id].write_value(device.state)
+                    dev_values[device.id] = device.state
+                elif device.module == "modules/gpio_i2c.py":
+                    address = int(device.other1)
+                    command = int(device.other2)
+                    devicelist[device.id] = imports[device.id].dev(address)
+                    devicelist[device.id].write_value(command)
+                    dev_values[device.id] = devicelist[device.id].get_value()
+                elif device.module == "modules/gpio_serial.py":
+                    #split = device.other1.split(';')
+                    port = device.other1
+                    baudrate = int(device.other2)
+                    devicelist[device.id] = imports[device.id].dev(port, baudrate)
+                    #devicelist[device.id].write_value(device.other1)
+                    #dev_values[device.id] = devicelist[device.id].get_value()
+                elif device.module == "modules/gpio_spi.py":
+                    #split = device.other1.split(';')
+                    bus = int(device.other1)
+                    sdevice = int(device.other2)
+                    devicelist[device.id] = imports[device.id].dev(bus, sdevice)
+                    #devicelist[device.id].write_value(device.other1)
+                    #dev_values[device.id] = devicelist[device.id].get_value()
 
     except Exception, e:
         print str(e)
@@ -204,9 +210,9 @@ def homepage():
 
         i2cValues = []
         for dev in i2cDevices:
-            devicelist[dev.id].write_value(dev.other1)
+            devicelist[dev.id].write_value(dev.other2)
             dev_values[dev.id] = devicelist[dev.id].get_value()
-            i2cValues.append((dev.id, dev.name, dev.description, dev.dtype, dev.pin, dev.state, dev.module, dev_values[dev.id]))
+            i2cValues.append((dev.id, dev.name, dev.description, dev.dtype, dev.other1, dev.state, dev.module, dev_values[dev.id]))
 
         return render_template('overview.html', outputDevices=outputDevices, values=values, i2cValues=i2cValues, auth=auth if hasattr(flask_login.current_user, 'authenticated') else False)
     except Exception, e:
@@ -275,13 +281,21 @@ def devices():
     devices = Device.query.all()
     return render_template("devices.html", devices=devices)
 
-@app.route('/adddev')
+@app.route('/adddevchooser')
+@login_required
+@roles_accepted('user', 'admin')
+def adddevchooser():
+    modules = glob.glob("modules/*.py")
+    modules.remove("modules/__init__.py")
+    return render_template("adddevchooser.html", modules=modules)
+
+@app.route('/adddev', methods=['POST'])
 @login_required
 @roles_accepted('user', 'admin')
 def adddev():
-    modules = glob.glob("modules/*.py")
-    modules.remove("modules/__init__.py")
-    return render_template("adddev.html", modules=modules)
+    to_import = request.form['mod'][:-3]
+    imported = importlib.import_module(to_import.replace("/", "."))
+    return render_template(imported.get_form(), module=request.form['mod'])
 
 @app.route('/editdev')
 @login_required
@@ -289,7 +303,7 @@ def adddev():
 def editdev():
     devId = request.args.get("dev")
     device = Device.query.get(devId)
-    return render_template("editdev.html", dev=device)
+    return render_template(imports[int(devId)].get_form(), dev=device)
 
 @app.route('/deletedev')
 @login_required
@@ -299,6 +313,7 @@ def deletedev():
     devToDel = Device.query.get(devId)
     db.session.delete(devToDel)
     db.session.commit()
+    imports.pop(devId, None)
     return redirect(url_for('homepage'))
 
 @app.route('/edit', methods=['POST'])
@@ -309,8 +324,10 @@ def edit_device():
     device = Device.query.get(devId)
     device.name = request.form['name']
     device.description = request.form['description']
-    device.other1 = request.form['other1']
-    device.other2 = request.form['other2']
+    if 'other1' in request.form:
+        device.other1 = request.form['other1']
+    if 'other2' in request.form:
+        device.other2 = request.form['other2']
     db.session.commit()
     return redirect(url_for('homepage'))
 
@@ -319,14 +336,22 @@ def edit_device():
 @roles_accepted('user', 'admin')
 def add_device():
 #name, description, pin, dtype, module, state=None, other1=None, other2=None
-    if request.form['type'] == "output":
-        newDev = Device(request.form['name'], request.form['description'], request.form['pin'], request.form['type'], request.form['mod'], 0, request.form['other1'], request.form['other2'])
-        db.session.add(newDev)
-        db.session.commit()
+
+    to_import = request.form['mod'][:-3]
+    imported = importlib.import_module(to_import.replace("/", "."))
+    print to_import
+
+    if request.form['mod'] == "modules/gpio_output.py":
+        defaultState = 0
     else:
-        newDev = Device(request.form['name'], request.form['description'], request.form['pin'], request.form['type'], request.form['mod'], None, request.form['other1']|None, request.form['other2']|None)
-        db.session.add(newDev)
-        db.session.commit()
+        defaultState = None
+
+    newDev = Device(request.form['name'], request.form['description'], request.form['pin'] if('pin' in request.form) else None, \
+        imported.get_dtype(), request.form['mod'], defaultState, \
+        request.form['other1'] if('other1' in request.form) else None, request.form['other2'] if('other2' in request.form) else None)
+
+    db.session.add(newDev)
+    db.session.commit()
     init_devices()
     flash('New device was successfully added')
     return redirect(url_for('homepage'))
